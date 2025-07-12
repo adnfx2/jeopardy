@@ -92,8 +92,7 @@ $("#play").on("click", handleClickOfPlay);
  * Hints:
  * - Sets up the game when the play button is clickable.
  */
-function handleClickOfPlay ()
-{
+function handleClickOfPlay() {
   // todo set the game up if the play button is clickable
 }
 
@@ -108,14 +107,10 @@ function handleClickOfPlay ()
  * Hints:
  * - The game play is managed via events.
  */
-async function setupTheGame ()
-{
+async function setupTheGame() {
   // todo show the spinner while setting up the game
-
   // todo reset the DOM (table, button text, the end text)
-
   // todo fetch the game data (categories with clues)
-
   // todo fill the table
 }
 
@@ -127,8 +122,7 @@ async function setupTheGame ()
  * - Use /categories endpoint of the API.
  * - Request as many categories as possible, such as 100. Randomly pick as many categories as given in the `NUMBER_OF_CATEGORIES` constant, if the number of clues in the category is enough (<= `NUMBER_OF_CLUES` constant).
  */
-async function getCategoryIds ()
-{
+async function getCategoryIds() {
   const ids = []; // todo set after fetching
 
   // todo fetch NUMBER_OF_CATEGORIES amount of categories
@@ -158,12 +152,11 @@ async function getCategoryIds ()
  * - Use /category endpoint of the API.
  * - In the API, not all clues have a value. You can assign your own value or skip that clue.
  */
-async function getCategoryData (categoryId)
-{
+async function getCategoryData(categoryId) {
   const categoryWithClues = {
     id: categoryId,
     title: undefined, // todo set after fetching
-    clues: [] // todo set after fetching
+    clues: [], // todo set after fetching
   };
 
   // todo fetch the category with NUMBER_OF_CLUES_PER_CATEGORY amount of clues
@@ -183,8 +176,7 @@ async function getCategoryData (categoryId)
  *   Besides, for each clue in a category, you should create a row element (tr) and append it to the corresponding previously created and appended cell element (td).
  * - To this row elements (tr) should add an event listener (handled by the `handleClickOfClue` function) and set their IDs with category and clue IDs. This will enable you to detect which clue is clicked.
  */
-function fillTable (categories)
-{
+function fillTable(categories) {
   // todo
 }
 
@@ -201,10 +193,8 @@ $(".clue").on("click", handleClickOfClue);
  * - Don't forget to update the `activeClueMode` variable.
  *
  */
-function handleClickOfClue (event)
-{
+function handleClickOfClue(event) {
   // todo find and remove the clue from the categories
-
   // todo mark clue as viewed (you can use the class in style.css), display the question at #active-clue
 }
 
@@ -220,28 +210,24 @@ $("#active-clue").on("click", handleClickOfActiveClue);
  * - After clearing, check the categories array to see if it is empty to decide to end the game.
  * - Don't forget to update the `activeClueMode` variable.
  */
-function handleClickOfActiveClue (event)
-{
+function handleClickOfActiveClue(event) {
   // todo display answer if displaying a question
 
   // todo clear if displaying an answer
   // todo after clear end the game when no clues are left
 
-  if (activeClueMode === 1)
-  {
+  if (activeClueMode === 1) {
     activeClueMode = 2;
     $("#active-clue").html(activeClue.answer);
-  }
-  else if (activeClueMode === 2)
-  {
+  } else if (activeClueMode === 2) {
     activeClueMode = 0;
     $("#active-clue").html(null);
 
-    if (categories.length === 0)
-    {
+    if (categories.length === 0) {
       isPlayButtonClickable = true;
       $("#play").text("Restart the Game!");
       $("#active-clue").html("The End!");
     }
   }
 }
+

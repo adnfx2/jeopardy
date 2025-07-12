@@ -12,12 +12,11 @@
   #74119c
 */
 
-.disabled
-{
+.disabled {
   display: none;
 }
 
-.viewed
-{
+.viewed {
   text-decoration: line-through;
 }
+
