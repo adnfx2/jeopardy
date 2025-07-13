@@ -54,6 +54,7 @@ const NUMBER_OF_CATEGORIES = 6; // The number of categories you will be fetching
 const NUMBER_OF_CLUES_PER_CATEGORY = 5; // The number of clues you will be displaying per category. You can change this number.
 
 let categories = []; // The categories with clues fetched from the API.
+
 /*
 [
   {
@@ -123,10 +124,36 @@ async function setupTheGame() {
  * - Request as many categories as possible, such as 100. Randomly pick as many categories as given in the `NUMBER_OF_CATEGORIES` constant, if the number of clues in the category is enough (<= `NUMBER_OF_CLUES` constant).
  */
 async function getCategoryIds() {
-  const ids = []; // todo set after fetching
-
+  let ids = []; // todo set after fetching
   // todo fetch NUMBER_OF_CATEGORIES amount of categories
+  const ENDPOINT_CATEGORIES = "categories";
+  const MAX_COUNT_REQUEST = 100;
+  const api_request = API_URL + ENDPOINT_CATEGORIES;
+  const params = { count: MAX_COUNT_REQUEST };
 
+  // FETCH CATEGORIES
+  try {
+    const rawCategories = await axios.get(api_request, { params });
+    const fetchedCategories = rawCategories.data;
+    console.log(fetchedCategories.length);
+
+    // RANDOMLY PICKS A NUMBER_OF_CATEGORIES
+    for (let i = 0; i < NUMBER_OF_CATEGORIES; i++) {
+      const randIndex = Math.floor(Math.random() * fetchedCategories.length);
+      const fetchedCategory = fetchedCategories[randIndex];
+      const isCategoryRepeated = ids.indexOf(fetchedCategory.id) !== -1;
+
+      // PREVENTS TO ADD SAME CATEGORY
+      if (!isCategoryRepeated) {
+        ids.push(fetchedCategory.id);
+        categories.push(fetchedCategory);
+      } else {
+        i--;
+      }
+    }
+  } catch (error) {
+    console.error("getCategories failed", { error });
+  }
   return ids;
 }
 
@@ -230,4 +257,13 @@ function handleClickOfActiveClue(event) {
     }
   }
 }
+
+// TESTs ground
+
+async function test(params) {
+  const categoriesById = await getCategoryIds();
+  console.log({ categoriesById, categories });
+}
+
+test();
 
