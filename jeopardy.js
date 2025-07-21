@@ -135,7 +135,6 @@ async function getCategoryIds() {
   try {
     const rawCategories = await axios.get(api_request, { params });
     const fetchedCategories = rawCategories.data;
-    console.log(fetchedCategories.length);
 
     // RANDOMLY PICKS A NUMBER_OF_CATEGORIES
     for (let i = 0; i < NUMBER_OF_CATEGORIES; i++) {
@@ -179,16 +178,22 @@ async function getCategoryIds() {
  * - Use /category endpoint of the API.
  * - In the API, not all clues have a value. You can assign your own value or skip that clue.
  */
-async function getCategoryData(categoryId) {
-  const categoryWithClues = {
-    id: categoryId,
-    title: undefined, // todo set after fetching
-    clues: [], // todo set after fetching
-  };
-
-  // todo fetch the category with NUMBER_OF_CLUES_PER_CATEGORY amount of clues
-
-  return categoryWithClues;
+async function getCategoriesData(categoriesIds) {
+  if (typeof categoriesIds !== typeof []) return;
+  let categoriesWithClues;
+  const ENDPOINT_CATEGORY = "category";
+  const api_get_category = API_URL + ENDPOINT_CATEGORY;
+  try {
+    const rawCategoriesClues = await axios.all(
+      categoriesIds.map((id) =>
+        axios.get(api_get_category, { params: { id } }),
+      ),
+    );
+    categoriesWithClues = rawCategoriesClues.map((category) => category.data);
+  } catch (error) {
+    console.error("getCategoryData", error);
+  }
+  return categoriesWithClues;
 }
 
 /**
@@ -260,10 +265,11 @@ function handleClickOfActiveClue(event) {
 
 // TESTs ground
 
-async function test(params) {
+async function test() {
   const categoriesById = await getCategoryIds();
   console.log({ categoriesById, categories });
+  const category = await getCategoriesData(categoriesById);
+  console.log({ category });
 }
 
 test();
-
