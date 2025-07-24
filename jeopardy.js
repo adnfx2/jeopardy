@@ -53,34 +53,23 @@ const API_URL = "https://rithm-jeopardy.herokuapp.com/api/"; // The URL of the A
 const NUMBER_OF_CATEGORIES = 6; // The number of categories you will be fetching. You can change this number.
 const NUMBER_OF_CLUES_PER_CATEGORY = 5; // The number of clues you will be displaying per category. You can change this number.
 
-let categories = []; // The categories with clues fetched from the API.
-
-/*
-[
-  {
-    "id": <category ID>,
-    "title": <category name>,
-    "clues": [
-      {
-        "id": <clue ID>,
-        "value": <value (e.g. $200)>,
-        "question": <question>,
-        "answer": <answer>
-      },
-      ... more categories
-    ]
-  },
-  ... more categories
-]
- */
-
-let activeClue = null; // Currently selected clue data.
-let activeClueMode = 0; // Controls the flow of #active-clue element while selecting a clue, displaying the question of selected clue, and displaying the answer to the question.
-/*
+// GAME STATE - DEFAULT
+function createGameState(params) {
+  return {
+    categoriesIds: [],
+    categoriesById: {},
+    cluesByCategoriesId: [],
+    activeClue: null,
+    activeClueMode: 0, // Controls the flow of #active-clue element while selecting a clue, displaying the question of selected clue, and displaying the answer to the question.
+    /*
 0: Empty. Waiting to be filled. If a clue is clicked, it shows the question (transits to 1).
 1: Showing a question. If the question is clicked, it shows the answer (transits to 2).
 2: Showing an answer. If the answer is clicked, it empties (transits back to 0).
  */
+  };
+}
+
+let gameState = null;
 
 let isPlayButtonClickable = true; // Only clickable when the game haven't started yet or ended. Prevents the button to be clicked during the game.
 
@@ -95,6 +84,12 @@ $("#play").on("click", handleClickOfPlay);
  */
 function handleClickOfPlay() {
   // todo set the game up if the play button is clickable
+  if (!isPlayButtonClickable) return;
+
+  // START GAME
+  console.log("START GAME");
+  $("#play").prop("disabled", true);
+  setupTheGame();
 }
 
 /**
@@ -109,10 +104,24 @@ function handleClickOfPlay() {
  * - The game play is managed via events.
  */
 async function setupTheGame() {
+  gameState = createGameState();
+
   // todo show the spinner while setting up the game
+  $("#spinner").toggleClass("disabled");
   // todo reset the DOM (table, button text, the end text)
+  $("#categories, #clues, #active-clue").empty();
   // todo fetch the game data (categories with clues)
-  // todo fill the table
+  const [categoriesIds, categoriesById] = await getCategoryIds();
+  const cluesByCategoriesId = await getCategoriesData(categoriesIds);
+  // store game data
+  gameState = {
+    ...gameState,
+    categoriesIds,
+    categoriesById,
+    cluesByCategoriesId,
+  };
+  console.log({ gameState });
+  fillTable();
 }
 
 /**
@@ -124,7 +133,8 @@ async function setupTheGame() {
  * - Request as many categories as possible, such as 100. Randomly pick as many categories as given in the `NUMBER_OF_CATEGORIES` constant, if the number of clues in the category is enough (<= `NUMBER_OF_CLUES` constant).
  */
 async function getCategoryIds() {
-  let ids = []; // todo set after fetching
+  let categoriesIds = []; // todo set after fetching
+  let categoriesById = {};
   // todo fetch NUMBER_OF_CATEGORIES amount of categories
   const ENDPOINT_CATEGORIES = "categories";
   const MAX_COUNT_REQUEST = 100;
@@ -140,12 +150,16 @@ async function getCategoryIds() {
     for (let i = 0; i < NUMBER_OF_CATEGORIES; i++) {
       const randIndex = Math.floor(Math.random() * fetchedCategories.length);
       const fetchedCategory = fetchedCategories[randIndex];
-      const isCategoryRepeated = ids.indexOf(fetchedCategory.id) !== -1;
+      const isCategoryRepeated =
+        categoriesIds.indexOf(fetchedCategory.id) !== -1;
 
       // PREVENTS TO ADD SAME CATEGORY
       if (!isCategoryRepeated) {
-        ids.push(fetchedCategory.id);
-        categories.push(fetchedCategory);
+        categoriesIds.push(fetchedCategory.id);
+        categoriesById = {
+          ...categoriesById,
+          [fetchedCategory.id]: fetchedCategory,
+        };
       } else {
         i--;
       }
@@ -153,7 +167,7 @@ async function getCategoryIds() {
   } catch (error) {
     console.error("getCategories failed", { error });
   }
-  return ids;
+  return [categoriesIds, categoriesById];
 }
 
 /**
@@ -189,7 +203,12 @@ async function getCategoriesData(categoriesIds) {
         axios.get(api_get_category, { params: { id } }),
       ),
     );
-    categoriesWithClues = rawCategoriesClues.map((category) => category.data);
+    categoriesWithClues = rawCategoriesClues.reduce((acc, currentCategory) => {
+      const category = currentCategory.data;
+      console.log({ category });
+      const { id, clues } = category;
+      return { ...acc, [id]: clues };
+    }, {});
   } catch (error) {
     console.error("getCategoryData", error);
   }
@@ -208,8 +227,17 @@ async function getCategoriesData(categoriesIds) {
  *   Besides, for each clue in a category, you should create a row element (tr) and append it to the corresponding previously created and appended cell element (td).
  * - To this row elements (tr) should add an event listener (handled by the `handleClickOfClue` function) and set their IDs with category and clue IDs. This will enable you to detect which clue is clicked.
  */
-function fillTable(categories) {
-  // todo
+function fillTable() {
+  const { categoriesIds, categoriesById, cluesByCategoriesId } = gameState;
+  const addCategories = (id) => $("<th>").append(categoriesById[id].title);
+  const addQuestion = (clue) => $("<tr>").append(clue.id);
+  const addClues = (id) => {
+    const categoryQuestions = cluesByCategoriesId[id].map(addQuestion);
+    return $("<td>").append(categoryQuestions);
+  };
+
+  $("#categories").append(categoriesIds.map(addCategories));
+  $("#clues").append(categoriesIds.map(addClues));
 }
 
 $(".clue").on("click", handleClickOfClue);
@@ -264,12 +292,3 @@ function handleClickOfActiveClue(event) {
 }
 
 // TESTs ground
-
-async function test() {
-  const categoriesById = await getCategoryIds();
-  console.log({ categoriesById, categories });
-  const category = await getCategoriesData(categoriesById);
-  console.log({ category });
-}
-
-test();
