@@ -1,22 +1,168 @@
-/*
-  You don't need to touch this file to complete the assignment!
-  Unless you want to add styles and make it look more beautiful.
-*/
+@import url("https://fonts.googleapis.com/css2?family=Caesar+Dressing&display=swap");
 
-/*
-  Some colors you may find useful:
-  #115ff4
-  #060ce9
-  #28a200
-  #8d2ab5
-  #74119c
-*/
-
-.disabled {
-  display: none;
+:root {
+  --caesar: "Caesar Dressing";
+  --jungleGreen: #3c6930;
 }
 
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* LAYOUT */
+body {
+  font-family: var(--caesar);
+  display: grid;
+  gap: 10px;
+  align-content: center;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--jungleGreen);
+  padding: 2em;
+  /* experimental support*/
+  width: 100dvw;
+  height: 100dvh;
+}
+body > header {
+  font-size: 2em;
+  text-align: center;
+  align-content: center;
+  letter-spacing: 1em;
+  height: 10vh;
+  /* experimental support*/
+  height: 10dvh;
+}
+body > section {
+  background-color: seagreen;
+  border-radius: 10px;
+}
+table {
+  width: 100%;
+  border-radius: 10%;
+}
+
+/* CLUES */
+#clues {
+  overflow: hidden;
+  height: 70dvh;
+  background-color: seagreen;
+  /* experimental support*/
+  height: 70dvh;
+}
+#clues,
+#categories {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+}
+#clues > td {
+  display: grid;
+}
+.category {
+  color: seashell;
+  font-size: 1.5em;
+  margin: auto;
+}
+
+/* CLUE */
+.clue {
+  font-size: 2em;
+  text-align: center;
+  align-content: center;
+  box-sizing: border-box;
+  border-radius: 15px;
+  background-color: darkolivegreen;
+  margin: 3px;
+  padding: 2px;
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.clue:not(.viewed):hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+}
+
+/* START GAME */
+.btn-play {
+  width: 150px;
+  height: 60px;
+  border: 3px solid brown;
+  border-radius: 45px;
+  transition: all 0.3s;
+  cursor: pointer;
+  background: maroon;
+  font-size: 1.2em;
+  font-weight: 550;
+  color: navajowhite;
+}
+.btn-play:not(:disabled):hover {
+  color: white;
+  font-size: 1.3em;
+}
+.btn-play:disabled {
+  background-color: darkslategray;
+  border-color: darkslategray;
+  animation: none;
+  transition: none;
+}
+
+/* JEOPARDY TITLE */
+.jeopardyTitle {
+  background: linear-gradient(90deg, gray, yellow, red) -100%/200%;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 2s linear infinite;
+}
+@keyframes shimmer {
+  to {
+    background-position: 100%;
+  }
+}
+
+/*ACTIVE-CLUE */
+#active-clue {
+  display: grid;
+  grid-template-rows: 1fr 3fr 1fr;
+}
+#active-clue > * {
+  font-size: 3vh;
+  text-align: center;
+  align-content: center;
+  background-color: sandybrown;
+}
+#active-clue > p {
+  background-color: brown;
+}
+
+/* SPINNER */
+#spinner {
+  font-size: 10vh;
+  text-align: center;
+  align-content: center;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+/* Modal like style */
+#active-clue,
+#spinner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50vw;
+  height: 30vh;
+}
+
+/* UTILS */
+.disabled {
+  display: none !important;
+}
 .viewed {
   text-decoration: line-through;
+  background-color: darkslategray;
 }
-

@@ -52,15 +52,18 @@ Category: The name given to the structure containing clues on the same topic.
 const API_URL = "https://rithm-jeopardy.herokuapp.com/api/"; // The URL of the API.
 const NUMBER_OF_CATEGORIES = 6; // The number of categories you will be fetching. You can change this number.
 const NUMBER_OF_CLUES_PER_CATEGORY = 5; // The number of clues you will be displaying per category. You can change this number.
-
+// Constants for activeClueMode game
+const NO_CLUES_SELECTED = "NO_CLUES_SELECTED";
+const SHOWING_QUESTION = "SHOWING_QUESTION";
+const SHOWING_ANSWER = "SHOWING_ANSWER";
 // GAME STATE - DEFAULT
 function createGameState(params) {
   return {
-    categoriesIds: [],
-    categoriesById: {},
-    cluesByCategoriesId: [],
+    categories: {},
+    cluesByCategoriesIds: {},
+    categoriesDone: 0,
     activeClue: null,
-    activeClueMode: 0, // Controls the flow of #active-clue element while selecting a clue, displaying the question of selected clue, and displaying the answer to the question.
+    activeClueMode: NO_CLUES_SELECTED, // Controls the flow of #active-clue element while selecting a clue, displaying the question of selected clue, and displaying the answer to the question.
     /*
 0: Empty. Waiting to be filled. If a clue is clicked, it shows the question (transits to 1).
 1: Showing a question. If the question is clicked, it shows the answer (transits to 2).
@@ -105,23 +108,24 @@ function handleClickOfPlay() {
  */
 async function setupTheGame() {
   gameState = createGameState();
-
   // todo show the spinner while setting up the game
   $("#spinner").toggleClass("disabled");
+  $("#play").text("loading...");
   // todo reset the DOM (table, button text, the end text)
   $("#categories, #clues, #active-clue").empty();
   // todo fetch the game data (categories with clues)
   const [categoriesIds, categoriesById] = await getCategoryIds();
-  const cluesByCategoriesId = await getCategoriesData(categoriesIds);
+  const cluesByCategoriesIds = await getCategoriesData(categoriesIds);
+  $("#play").text("Select a clue!");
+
   // store game data
   gameState = {
     ...gameState,
-    categoriesIds,
-    categoriesById,
-    cluesByCategoriesId,
+    categories: { ids: categoriesIds, ...categoriesById },
+    cluesByCategoriesIds,
   };
-  console.log({ gameState });
   fillTable();
+  $("#spinner").toggleClass("disabled");
 }
 
 /**
@@ -203,12 +207,23 @@ async function getCategoriesData(categoriesIds) {
         axios.get(api_get_category, { params: { id } }),
       ),
     );
-    categoriesWithClues = rawCategoriesClues.reduce((acc, currentCategory) => {
-      const category = currentCategory.data;
-      console.log({ category });
-      const { id, clues } = category;
-      return { ...acc, [id]: clues };
-    }, {});
+    categoriesWithClues = rawCategoriesClues.reduce(
+      (prevCategory, category) => {
+        const { id, clues } = category.data;
+
+        const normalizedClues = clues.reduce(
+          (prevClues, clue) => ({
+            ...prevClues,
+            cluesIds: [...prevClues.cluesIds, clue.id],
+            [clue.id]: clue,
+          }),
+          { cluesIds: [] },
+        );
+        normalizedClues.viewed = 0;
+        return { ...prevCategory, [id]: normalizedClues };
+      },
+      {},
+    );
   } catch (error) {
     console.error("getCategoryData", error);
   }
@@ -228,19 +243,37 @@ async function getCategoriesData(categoriesIds) {
  * - To this row elements (tr) should add an event listener (handled by the `handleClickOfClue` function) and set their IDs with category and clue IDs. This will enable you to detect which clue is clicked.
  */
 function fillTable() {
-  const { categoriesIds, categoriesById, cluesByCategoriesId } = gameState;
-  const addCategories = (id) => $("<th>").append(categoriesById[id].title);
-  const addQuestion = (clue) => $("<tr>").append(clue.id);
-  const addClues = (id) => {
-    const categoryQuestions = cluesByCategoriesId[id].map(addQuestion);
+  const { categories, cluesByCategoriesIds } = gameState;
+  const addCategories = (catId) =>
+    $(`<th class="category">`).append(categories[catId].title);
+
+  const addClues = (catId) => {
+    const clues = cluesByCategoriesIds[catId];
+    const { cluesIds } = clues;
+
+    const addQuestion = (clueId) => {
+      const clue = clues[clueId];
+      const $clueElement = $("<tr>", {
+        class: "clue",
+        ["data-category-id"]: catId,
+        ["data-clue-id"]: clueId,
+      });
+      return $clueElement.append(`<h4>${clue.value || 1000}</h4>`);
+      // return $clueElement.append(`
+      //   <h4>${clue.question}</h4>
+      //   <p>${clue.value || 100}</p>
+      // `);
+    };
+
+    const categoryQuestions = cluesIds.map(addQuestion);
     return $("<td>").append(categoryQuestions);
   };
 
-  $("#categories").append(categoriesIds.map(addCategories));
-  $("#clues").append(categoriesIds.map(addClues));
+  $("#categories").append(categories.ids.map(addCategories));
+  $("#clues").append(categories.ids.map(addClues));
 }
 
-$(".clue").on("click", handleClickOfClue);
+$("#clues").on("click", handleClickOfClue);
 
 /**
  * Manages the behavior when a clue is clicked.
@@ -254,6 +287,37 @@ $(".clue").on("click", handleClickOfClue);
  *
  */
 function handleClickOfClue(event) {
+  const selectedClue = event.target.closest("tr");
+
+  // RUN ONLY WHEN NO QUESTION IS SELECTED
+  if (gameState.activeClueMode === SHOWING_QUESTION) return;
+  if (gameState.activeClueMode === SHOWING_ANSWER) return;
+  if (selectedClue.classList.contains("viewed")) return;
+
+  // GET CLUE CLICKED
+  const categoryId = selectedClue.attributes["data-category-id"].value;
+  const clueId = selectedClue.attributes["data-clue-id"].value;
+
+  // GET CURRENT GAMESTATE
+  const clues = gameState.cluesByCategoriesIds[categoryId];
+  gameState.activeClueMode = SHOWING_QUESTION;
+  gameState.activeClue = clues[clueId];
+
+  // FLAG CLUE AS VIEWED
+  clues.viewed++;
+  selectedClue.classList.toggle("viewed");
+  $("#active-clue").toggleClass("disabled");
+
+  // TRACK CATEGORIES DONE WHEN CLUES ANSWERED
+  const isCluesDone = clues.viewed === clues.cluesIds.length;
+  if (isCluesDone) gameState.categoriesDone++;
+
+  // DISPLAY SELECTED CLUE
+  $("#active-clue").append(`
+    <h4>Clue</h4>
+    <p>${clues[clueId].question}</p>
+    <button>see answer</button>
+  `);
   // todo find and remove the clue from the categories
   // todo mark clue as viewed (you can use the class in style.css), display the question at #active-clue
 }
@@ -270,24 +334,46 @@ $("#active-clue").on("click", handleClickOfActiveClue);
  * - After clearing, check the categories array to see if it is empty to decide to end the game.
  * - Don't forget to update the `activeClueMode` variable.
  */
-function handleClickOfActiveClue(event) {
+
+function handleClickOfActiveClue() {
   // todo display answer if displaying a question
 
   // todo clear if displaying an answer
   // todo after clear end the game when no clues are left
 
-  if (activeClueMode === 1) {
-    activeClueMode = 2;
-    $("#active-clue").html(activeClue.answer);
-  } else if (activeClueMode === 2) {
-    activeClueMode = 0;
-    $("#active-clue").html(null);
+  let { activeClue, activeClueMode } = gameState;
+  const category = gameState.categories[activeClue.category_id];
 
-    if (categories.length === 0) {
+  if (activeClueMode === SHOWING_QUESTION) {
+    gameState.activeClueMode = SHOWING_ANSWER;
+    gameState.cluesByCategoriesIds;
+
+    $("#active-clue").html(`
+    <h4>Answer</h4>
+    <p>${activeClue.answer}</p>
+    <button>continue</button>
+  `);
+    return;
+  }
+  if (activeClueMode === SHOWING_ANSWER) {
+    gameState.activeClueMode = NO_CLUES_SELECTED;
+    gameState.activeClue = null;
+    const isGameOver =
+      gameState.categoriesDone === gameState.categories.ids.length;
+    $("#active-clue").html(null);
+    if (isGameOver) {
       isPlayButtonClickable = true;
       $("#play").text("Restart the Game!");
-      $("#active-clue").html("The End!");
+      $("#play").prop("disabled", false);
+      $("#active-clue").html(`
+        <h4>You did it!</h4>
+        <p>Game Over!</p>
+        <button>Ready for another round?</button>
+      `);
+    } else {
+      $("#active-clue").toggleClass("disabled");
     }
+    return;
   }
 }
 

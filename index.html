@@ -14,11 +14,13 @@
     />
   </head>
   <body>
-    <h1>Jeopardy!</h1>
+    <header>
+      <h1 class="jeopardyTitle">Jeopardy!</h1>
+    </header>
 
-    <button id="play">
+    <button class="btn-play" id="play">
       <!-- When the game ends, update the text. -->
-      Start the Game!
+      Start Game!
     </button>
 
     <section>
@@ -36,7 +38,7 @@
         </tbody>
       </table>
 
-      <div id="active-clue">
+      <div id="active-clue" class="disabled">
         <!-- When a clue is clicked, show the question here. -->
         <!-- When a question is clicked, show the answer here. -->
         <!-- When the game ends, show it here. -->
@@ -53,4 +55,3 @@
     <script src="jeopardy.js"></script>
   </body>
 </html>
-
