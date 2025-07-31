@@ -45,7 +45,6 @@ table {
 
 /* CLUES */
 #clues {
-  overflow: hidden;
   height: 70dvh;
   background-color: seagreen;
   /* experimental support*/
@@ -67,6 +66,7 @@ table {
 
 /* CLUE */
 .clue {
+  position: relative;
   font-size: 2em;
   text-align: center;
   align-content: center;
@@ -83,7 +83,7 @@ table {
 }
 .clue:not(.viewed):hover {
   transform: scale(1.05);
-  box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 25px rgba(240, 234, 214, 0.1);
 }
 
 /* START GAME */
