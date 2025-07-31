@@ -3,7 +3,7 @@ Jeopardy! is one of the longest-running game shows in American history. It has b
 ## Rules
 - [ ] Click Start Game
 - [ ] Wait for it to load the clues!
-- [ ] Select a clue from what categorie
+- [ ] Select a clue from any category
 - [ ] Click the clue to reveal the anwser
 - [ ] Once you finish only one category YOU WIN! 🤑
 - [ ] To replay click on restart game 🚀
